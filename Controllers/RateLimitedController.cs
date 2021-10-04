@@ -27,9 +27,9 @@ namespace SlidingWindowRateLimiter.Controllers
             if(!string.IsNullOrEmpty(authorization)) encoded = AuthenticationHeaderValue.Parse(authorization).Parameter;
             if (string.IsNullOrEmpty(encoded)) return new UnauthorizedResult();
             var apiKey = Encoding.UTF8.GetString(Convert.FromBase64String(encoded)).Split(':')[0];
-            var limit = ((int) await _db.ScriptEvaluateAsync(Scripts.SlidingRateLimiterScript,
+            var limited = ((int) await _db.ScriptEvaluateAsync(Scripts.SlidingRateLimiterScript,
                 new {key = new RedisKey($"{Request.Path}:{apiKey}"), window = 30, max_requests = 10})) == 1;
-            return limit ? new StatusCodeResult(429) : Ok();
+            return limited ? new StatusCodeResult(429) : Ok();
         }
     }
 }
