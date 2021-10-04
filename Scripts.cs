@@ -6,13 +6,13 @@ namespace SlidingWindowRateLimiter
     {
         public static LuaScript SlidingRateLimiterScript => LuaScript.Prepare(SlidingRateLimiter);
         private const string SlidingRateLimiter = @"
-            local current_time = tonumber(redis.call('TIME')[1])
-            local trim_time = current_time - @window
+            local current_time = redis.call('TIME')
+            local trim_time = tonumber(current_time[1]) - @window
             redis.call('ZREMRANGEBYSCORE', @key, 0, trim_time)
             local request_count = redis.call('ZCARD',@key)
 
             if request_count < tonumber(@max_requests) then
-                redis.call('ZADD', @key, current_time, current_time)
+                redis.call('ZADD', @key, current_time[1], current_time[1] .. current_time[2])
                 redis.call('EXPIRE', @key, @window)
                 return 0
             end

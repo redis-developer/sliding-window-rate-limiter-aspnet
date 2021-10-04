@@ -25,13 +25,13 @@ public async Task<IActionResult> Sliding([FromHeader] string authorization)
 This flow uses a script run through the script preparation engine of the [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/Scripting.html) and is consequentially usable without the typical deference to the KEYS/ARGV arrays. This script, maintains a sorted set, which is trimmed to the current time window, adds accepted requests to it, set's the expiriation of the sorted set to the time window, and returns `0` if not rate limited and `1` if rate limited:
 
 ```text
-local current_time = tonumber(redis.call('TIME')[1])
-local trim_time = current_time - @window
+local current_time = redis.call('TIME')
+local trim_time = tonumber(current_time[1]) - @window
 redis.call('ZREMRANGEBYSCORE', @key, 0, trim_time)
 local request_count = redis.call('ZCARD',@key)
 
 if request_count < tonumber(@max_requests) then
-    redis.call('ZADD', @key, current_time, current_time)
+    redis.call('ZADD', @key, current_time[1], current_time[1] .. current_time[2])
     redis.call('EXPIRE', @key, @window)
     return 0
 end
